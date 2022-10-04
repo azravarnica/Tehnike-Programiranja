@@ -1,0 +1,43 @@
+#include <iostream>
+#include <cmath>
+#include <deque>
+#include <vector>
+#include <string>
+#include <array>
+#include <list>
+#include <type_traits>
+
+template <typename tip1, typename tip2>
+auto ZbirKontejnera(tip1 kontejner1, tip2 kontejner2)->std::vector<decltype(*kontejner1.begin() + *kontejner2.begin())>{
+    std::vector<decltype(*kontejner1.begin() + *kontejner2.begin())> v;
+    auto it1 = kontejner1.begin();
+    auto it2 = kontejner2.begin();
+    typedef typename std::remove_reference<decltype(*kontejner1.begin() + *kontejner2.begin())>::type tip;
+    tip a;
+    for(;;){
+        if(it1 != kontejner1.end() && it2 != kontejner2.end()) v.push_back(*it1 + *it2);
+        else if(it1 != kontejner1.end()) { a = *it1; v.push_back(a);}
+        else if(it2 != kontejner2.end()) { a = *it2; v.push_back(a);}
+        if(it1 == kontejner1.end() && it2 == kontejner2.end()) break;
+
+        if(it1 != kontejner1.end()) it1++;
+        if(it2 != kontejner2.end()) it2++;
+    }
+    return v;
+}
+int main ()
+{
+    int n1,n2;
+    std::cout<<"Duzina prvog kontejnera: "; std::cin>>n1;
+    std::vector<double>v1(n1);
+    std::cout<<"Elementi prvog kontejnera: ";
+    for(int i=0; i<n1; i++) std::cin>>v1.at(i);
+    std::cout<<"Duzina drugog kontejnera: "; std::cin>>n2;
+    std::vector<double>v2(n2);
+    std::cout<<"Elementi drugog kontejnera: ";
+    for(int i=0; i<n2; i++) std::cin>>v2.at(i);
+    std::cout<<"Zbir kontejnera: ";
+    auto v3 = ZbirKontejnera(v1, v2);
+     for(auto x : v3) std::cout<<x<<" ";
+	return 0;
+}

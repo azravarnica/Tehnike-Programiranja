@@ -1,0 +1,224 @@
+#include <fstream>
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <vector>
+#include <algorithm>
+#include <memory>
+
+
+class Spremnik{
+ protected:
+    double tezina;
+    std::string naziv;
+
+public:
+    Spremnik(double t, std::string n):tezina(t), naziv(n){}
+    double DajTezinu() const {
+        return tezina;
+    }
+    virtual double DajUkupnuTezinu() const = 0;
+    virtual void Ispisi() const = 0;
+    virtual ~Spremnik(){};
+    virtual std::shared_ptr<Spremnik> DajKopiju() const = 0;
+};
+
+class Sanduk : public Spremnik{
+    std::vector<double>tezinaPredmeta;
+
+public:
+    Sanduk(double t, std::string n, std::vector<double>tp):Spremnik(t, n), tezinaPredmeta(tp){}
+    
+    double DajUkupnuTezinu() const override{
+        double suma = 0;
+        for(double i : tezinaPredmeta) suma += i;
+        return suma + DajTezinu();
+    }
+
+    void Ispisi() const override{
+        std::cout<<"Vrsta spremnika: Sanduk"<<std::endl<<"Sadrzaj: "<<naziv<<std::endl<<"Tezine predmeta: ";
+        for(double i : tezinaPredmeta) std::cout<<i<<" ";
+        std::cout<<"(kg)"<<std::endl<<"Vlastita tezina: "<<tezina<<" (kg)"<<std::endl;
+        std::cout<<"Ukupna tezina: "<<DajUkupnuTezinu()<<" (kg)"<<std::endl;
+    }
+
+    std::shared_ptr<Spremnik> DajKopiju() const override{
+        return std::make_shared<Sanduk>(*this);
+    }
+
+};
+
+class Vreca : public Spremnik{
+    double tezinaP;
+
+public:
+    Vreca(double t, std::string n, double t_p):Spremnik(t,n), tezinaP(t_p){}
+
+    double DajUkupnuTezinu() const override{
+        return tezina + tezinaP;
+    }
+
+    void Ispisi() const override{
+        std::cout<<"Vrsta spremnika: Vreca"<<std::endl<<"Sadrzaj: "<<naziv<<std::endl<<"Vlastita tezina: ";
+        std::cout<<tezina<<" (kg)"<<std::endl<<"Tezina pohranjene materije: "<<tezinaP<<" (kg)"<<std::endl;
+        std::cout<<"Ukupna tezina: "<<DajUkupnuTezinu()<<" (kg)"<<std::endl;
+    }
+
+    std::shared_ptr<Spremnik> DajKopiju() const override{
+        return std::make_shared<Vreca>(*this);
+    }
+
+};
+
+class Bure : public Spremnik{
+    double tezinaT, zapreminaT;
+
+public: 
+    Bure(double t, std::string n, double tt, double zt):Spremnik(t,n), tezinaT(tt), zapreminaT(zt){}
+
+    double DajUkupnuTezinu() const override{
+        return zapreminaT * (tezinaT / 1000) + tezina;
+    }
+
+    void Ispisi() const override{
+        std::cout<<"Vrsta spremnika: Bure"<<std::endl<<"Sadrzaj: "<<naziv<<std::endl<<"Vlastita tezina: ";
+        std::cout<<tezina<<" (kg)"<<std::endl<<"Specificna tezina tecnosti: "<<tezinaT<<" (kg/m^3)"<<std::endl
+        <<"Zapremina tecnosti: "<<zapreminaT<<" (l)"<<std::endl<<"Ukupna tezina: "<<DajUkupnuTezinu()<<" (kg)"<<std::endl;
+    }
+
+    std::shared_ptr<Spremnik> DajKopiju() const override{
+        return std::make_shared<Bure>(*this);
+    }
+};
+
+class Skladiste{
+    std::vector<std::shared_ptr<Spremnik>> v;
+
+public:
+    Skladiste(): v(0){};
+    Skladiste(const Skladiste &s){
+        v.resize(0);
+        for(auto x : s.v) v.push_back(x->DajKopiju());
+    }
+    Skladiste &operator=(const Skladiste &s){
+        v.resize(0);
+        for(auto x : s.v) v.push_back(x->DajKopiju());
+
+        return *this;
+    }
+    Skladiste (Skladiste &&s){
+        v = std::move(s.v);
+    }
+    Skladiste &operator=(Skladiste &&s){
+        v = std::move(s.v);
+        return *this;
+    }
+    Spremnik *DodajSanduk(double t, std::string n, std::vector<double>tp){
+        auto p = std::make_shared<Sanduk>(t,n,tp);
+        v.push_back(p);
+        return &*p;
+    }
+    Spremnik *DodajVrecu(double t, std::string n, double tp){
+        auto p = std::make_shared<Vreca>(t,n,tp);
+        v.push_back(p);
+        return &*p;
+    }
+    Spremnik *DodajBure(double t, std::string n, double tt, double zt){
+        auto p = std::make_shared<Bure>(t,n,tt,zt);
+        v.push_back(p);
+        return &*p;
+    }
+    Spremnik *DodajSpremnik(Spremnik *p, bool vl){
+        if(vl){
+            std::shared_ptr<Spremnik> s(p);
+            v.push_back(s);
+            return &*s;
+        }
+        auto s(p->DajKopiju());
+        v.push_back(s);
+        return &*s;
+    }
+    void BrisiSpremnik(Spremnik *p){
+        for(int i=0; i<v.size(); i++){
+            if(&*v[i] == &*p){
+                v.erase(v.begin()+1);
+                break;
+            }
+        }
+    }
+    Spremnik &DajNajlaksi(){
+        if(v.size() == 0) throw std::range_error("Skladiste je prazno");
+
+        auto it = std::min_element(v.begin(), v.end(), 
+                                   [](std::shared_ptr<Spremnik>p1, std::shared_ptr<Spremnik>p2){
+                                       return p1->DajTezinu() < p2->DajTezinu(); });
+      return **it;
+    }
+    Spremnik &DajNajtezi(){
+        if(v.size() == 0) throw std::range_error("Skladiste je prazno");
+        
+        auto it = std::max_element(v.begin(), v.end(), 
+                                    [](std::shared_ptr<Spremnik>p1, std::shared_ptr<Spremnik>p2){
+                                        return p1->DajTezinu() < p2->DajTezinu();
+                                    });
+        return **it;
+    }
+    int BrojPreteskih(int n) const{
+        int broj = std::count_if(v.begin(), v.end(), [n](std::shared_ptr<Spremnik>p){
+            return p->DajUkupnuTezinu() > n;
+        });
+        return broj;
+    }
+    void IzlistajSkladiste() const{
+        auto v2 = this->v;
+        std::sort(v2.begin(), v2.end(), [](std::shared_ptr<Spremnik>p1, std::shared_ptr<Spremnik>p2){
+            return p1->DajUkupnuTezinu() > p2->DajUkupnuTezinu();
+        });
+        for(auto x : v2) x->Ispisi();
+    }
+    void UcitajIzDatoteke(std::string ime){
+        v.resize(0);
+        std::ifstream tok(ime);
+        if(!tok) throw std::logic_error("Trazena datoteka ne postoji");
+        char c;
+        std::string naziv;
+
+        while(tok>>c){
+            if(!(c == 'S' || c == 'V' || c == 'B')) throw std::logic_error("Datoteka sadrzi besmislene podatke");
+            std::getline(tok, naziv);
+            double vt;
+            if(c == 'S'){
+                int b;
+                tok>>vt>>b;
+                if(!tok) throw std::logic_error("Datoteka sadrzi besmislene podatke");
+                std::vector<double> vektor(b);
+                for(int i=0; i<b; i++){
+                    tok>>vektor[i];
+                    if(!tok) throw std::logic_error("Datoteka sadrzi besmislene podatke");
+                }
+                DodajSanduk(vt, naziv, vektor);
+            }
+            else if(c == 'V'){
+                double tp;
+                tok>>vt>>tp;
+                if(!tok) throw std::logic_error("Datoteka sadrzi besmislene podatke");
+                DodajVrecu(vt, naziv, tp);
+            }
+            else if(c == 'B'){
+                double sp,zp;
+                tok>>vt>>sp>>zp;
+                if(!tok) throw std::logic_error("Datoteka sadrzi besmislene podatke");
+                DodajBure(vt, naziv, sp, zp);
+            }
+
+            if(tok.eof()) return;
+        }
+        if(!tok) throw std::logic_error("Problemi pri ucitavanju datoteke");
+    }
+};
+int main ()
+{
+	return 0;
+}

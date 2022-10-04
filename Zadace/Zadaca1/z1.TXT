@@ -1,0 +1,60 @@
+#include <iostream>
+#include <cmath>
+#include <vector>
+
+bool TestPermutacija(std::vector<int> v1, std::vector<int> v2, int k){
+    if(k>=0 && k<v2.size()){
+        for(int i=0; i<v2.size()-k-1; i++){
+            if(v2.at(i) != v1.at(i+k)){
+             return false;}
+            
+        } return true;
+    } //std::cout<<"NEE";
+    return false;
+}
+
+int CiklickaPermutacija(std::vector<int>v1, std::vector<int>v2){
+    if(v1.size() == 0 && v2.size() == 0) return 0;
+    if(v2.size() == 1){
+        if(v1.at(0) == v2.at(0)) return 0;
+    }
+    for(int i=0; i<v2.size()-1; i++){
+        for(int j=0; j<v1.size(); j++){
+            if(v2.at(i) == v1.at(j)){
+                if(TestPermutacija(v1,v2, j)) return j;
+            }
+        }
+    }
+    return -1;
+}
+int main ()
+{    
+    int i=0,j=0,x;
+    std::vector<int>v1,v2;
+    std::cout<<"Prva sekvenca: ";
+    for(;;){
+        
+        if(!std::cin) break;
+        std::cin>>x;
+        v1.push_back(x);
+        i++;
+    }
+    std::cin.clear();
+    std::cin.ignore(10000, '\n');
+    std::cout<<"Druga sekvenca: ";
+    for(;;){
+       
+        if(!std::cin) break;
+        std::cin>>x;
+        v2.push_back(x);
+        j++;
+    }
+    std::cin.clear();
+    std::cin.ignore(10000, '\n');
+    //std::cin>>x;
+    //std::cout<<CiklickaPermutacija(v1, v2);
+    if(CiklickaPermutacija(v1, v2) == -1) std::cout<<"Druga sekvenca nije ciklicka permutacija prve.";
+    else std::cout<<"Druga sekvenca je ciklicka permutacija prve s pomakom "<<CiklickaPermutacija(v1, v2)<<".";
+	//std::cout<<TestPermutacija( v1, v2,x);
+    return 0;
+}

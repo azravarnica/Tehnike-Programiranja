@@ -1,0 +1,189 @@
+#include <iostream>
+#include <cmath>
+#include <vector>
+#include <stdexcept>
+#include <iomanip>
+#include <new>
+
+using namespace std;
+
+template <typename Tip>
+struct Matrica{
+  char ime_matrice;
+  int br_redova, br_kolona;
+  Tip **elementi = nullptr;
+};
+
+template <typename Tip>
+void UnistiMatricu(Matrica<Tip> matrica){
+    if(!matrica.elementi) return;
+    for(int i=0; i<matrica.br_redova; i++){
+        delete[] matrica.elementi[i];
+    }
+    delete [] matrica.elementi;
+    matrica.elementi = nullptr;
+}
+
+template<typename Tip>
+Matrica<Tip> StvoriMatricu(int br_redova, int br_kolona, char ime = 0){
+    Matrica<Tip> matrica;
+    matrica.br_redova = br_redova;
+    matrica.br_kolona = br_kolona;
+    matrica.ime_matrice = ime;
+    matrica.elementi = new Tip *[br_redova]{};
+    try{
+        for(int i=0; i< br_redova; i++) matrica.elementi[i] = new Tip[br_kolona]{};
+    }catch(...){
+        UnistiMatricu(matrica);
+        throw;
+    }
+    return matrica;
+
+}
+
+template <typename Tip>
+void UnesiMatricu(char ime_matrice, Matrica<Tip> &matrica){
+    for(int i=0; i<matrica.br_redova; i++){
+        for(int j=0; j<matrica.br_kolona; j++){
+            std::cout<<ime_matrice<<"("<<i+1<<","<<j+1<<") = ";
+            std::cin>>matrica.elementi[i][j];
+        }
+    }
+}
+
+template <typename Tip>
+void IspisiMatricu(const Matrica<Tip> &matrica, int sirina_ispisa, int preciznost = 6, bool treba_brisati = false){
+    for(int i=0; i<matrica.br_redova; i++){
+        for(int j=0; j<matrica.br_kolona; j++){
+            std::cout<<setprecision(preciznost)<<setw(sirina_ispisa)<<matrica.elementi[i][j];
+        }
+        std::cout<<endl;
+    }
+    if(treba_brisati) UnistiMatricu(matrica);
+}
+
+template <typename Tip>
+Matrica<Tip> ZbirMatrica(const Matrica<Tip>&m1, const Matrica<Tip> &m2){
+    if(m1.br_redova != m2.br_redova || m1.br_kolona != m2.br_kolona){
+        throw domain_error("Matrice nemaju jednake dimenzije!");
+    }
+    auto m3 = StvoriMatricu<Tip>(m1.br_redova, m1.br_kolona);
+    for(int i=0; i<m1.br_redova; i++){
+        for(int j=0; j<m1.br_kolona; j++){
+            m3.elementi[i][j] = m1.elementi[i][j] + m2.elementi[i][j];
+        }
+    }
+    return m3;
+}
+
+template <typename Tip>
+Matrica<Tip> ProduktMatrica(const Matrica<Tip> &m1, const Matrica<Tip> &m2){
+    if(m1.br_kolona != m2.br_redova){
+        throw domain_error("Matrice nisu saglasne za mnozenje");
+    }
+    auto m3 = StvoriMatricu<Tip>(m1.br_redova,  m2.br_kolona);
+    for(int i=0; i<m1.br_redova; i++){
+        for(int j=0;j<m2.br_kolona; j++){
+            for(int k=0; k<m1.br_kolona; k++){
+                m3.elementi[i][j] += m1.elementi[i][k] * m2.elementi[k][j];
+            }
+        }
+    }
+    return m3;
+}
+
+template <typename Tip>
+Matrica <Tip> KopirajMatricu(const Matrica<Tip> &m){
+    auto m1 = StvoriMatricu<Tip>(m.br_redova, m.br_kolona);
+    for(int i=0; i<m.br_redova; i++){
+        for(int j=0; j<m.br_kolona; j++){
+            m1.elementi[i][j] = m.elementi[i][j];
+        }
+    }
+    return m1;
+}
+
+template <typename Tip>
+void PomnoziSkalarom(const Matrica<Tip> &matrica, double skalar){
+    for(int i=0; i<matrica.br_redova; i++){
+        for(int j=0; j<matrica.br_kolona; j++){
+            matrica.elementi[i][j] *= skalar;
+        }
+    }
+}
+
+template <typename Tip>
+void StepenujMatricu(const Matrica <Tip> &matrica, int stepen){
+    if(stepen == 0){
+        for(int i=0; i<matrica.br_redova; i++){
+            for(int j=0; j<matrica.br_kolona; j++){
+                if(i == j){
+                    matrica.elementi[i][j] = 1;
+                }else{
+                    matrica.elementi[i][j] = 0;
+                }
+            }
+        }
+        return;
+    }
+    if(stepen == 1){
+        return;
+    }
+
+    auto pocetna = KopirajMatricu(matrica);
+    for(int k=2; k<=stepen; k++){
+        auto pomocna = ProduktMatrica(pocetna, matrica);
+        for(int i=0; i<matrica.br_redova; i++){
+            for(int j=0; j<matrica.br_kolona; j++){
+                matrica.elementi[i][j] = pomocna.elementi[i][j];
+            }
+        }
+        UnistiMatricu(pomocna);
+    }
+    UnistiMatricu(pocetna);
+}
+
+template <typename Tip>
+Matrica<Tip> MatricniPolinom(const Matrica<Tip> &m1, vector<double>koeficijenti){
+    if(m1.br_kolona != m1.br_redova) throw domain_error("Matrica mora biti kvadratna");
+
+    auto m2 = StvoriMatricu<Tip>(m1.br_redova, m1.br_kolona);
+    if(koeficijenti.size() == 0) return m2;
+    UnistiMatricu(m2);
+    auto m3= StvoriMatricu<Tip>(m1.br_redova, m1.br_kolona);
+    for(int k=0; k<koeficijenti.size(); k++){
+        m2=KopirajMatricu<Tip>(m1);
+        StepenujMatricu<Tip>(m2,k);
+        PomnoziSkalarom<Tip>(m2,koeficijenti[k]);
+        auto pomocna = ZbirMatrica(m3,m2);
+        UnistiMatricu(m3);
+        m3 = pomocna;
+        UnistiMatricu(m2);
+    }
+    return m3;
+}
+int main ()
+{
+    Matrica<double> m1;
+    int n;
+    cout<<"Unesite dimenziju kvadratne matrice: ";
+    cin>>n;
+    try{
+         m1=StvoriMatricu<double>(n,n);
+         cout<<"Unesite elemente matrice A:"<<endl;
+         UnesiMatricu('A',m1);
+         cout<<"Unesite red polinoma: ";
+         int red;
+         cin>>red;
+         vector<double> koeficijenti(red+1);
+         cout<<"Unesite koeficijente polinoma: ";
+         for(double &koef : koeficijenti){
+             cin>>koef;
+         }
+         IspisiMatricu(MatricniPolinom(m1, koeficijenti), 10, 6, true);
+    }catch(bad_alloc){
+        cout<<"Nema dovoljno memorije!"<<endl;
+    }
+    UnistiMatricu(m1);
+	return 0;
+}

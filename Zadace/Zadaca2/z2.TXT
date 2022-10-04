@@ -1,0 +1,47 @@
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <vector>
+
+bool DaLiJeProst(int &n){
+    if(n<=1) return false;
+    int brojac=0;
+    for(int i=2; i<=sqrt(n); i++){
+        if(n%i == 0){
+            brojac++;
+            if(brojac > 0) return false;
+        }
+    }
+    return true;
+}
+void Goldbach(int &n, int &p, int &q){
+    if (n<= 2) throw std::logic_error("Rastava ne postoji");
+    std::vector<int>v;
+    p=0; q=0;
+    for(int i=1; i<n; i++){
+        if(DaLiJeProst(i)) v.push_back(i);
+    }
+
+        for(int i=0; i<v.size(); i++){
+            for(int j=i+1; j<v.size(); j++){
+                if(v.at(i) + v.at(j) == n){
+                    p = v.at(i); q = v.at(j); return;
+                }
+            }
+        }
+    if(p+q != n) throw std::logic_error("Rastava ne postoji");
+}
+int main ()
+{ int n;
+    try{
+    int p=0,q=0;
+    std::cout<<"Unesi broj: ";
+    std::cin>>n;
+    Goldbach(n,p,q);
+     std::cout<<n<<" je zbir prostih brojeva "<<p<<" i "<<q;
+    
+    }catch(...){
+        std::cout<<n<<" nije zbir dva prosta broja!";
+    }
+	return 0;
+}

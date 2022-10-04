@@ -1,0 +1,105 @@
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <vector>
+#include <set>
+#include <string>
+#include <list>
+#include <iomanip>
+using namespace std;
+
+vector<set<string>> Razvrstavanje(vector<string> ime, int tim){
+    if(tim < 1 || tim > ime.size()) throw logic_error("Razvrstavanje nemoguce");
+
+    list<string> imena(ime.size());
+    auto iterator = imena.begin();
+
+    for(string x : ime){
+        *iterator = x;
+        iterator++;
+    }
+    vector<set<string>> timovi(tim);
+    int n = imena.size();
+    int brojPrvihTimova =0, brojPrvihClanova=0, brojPreostalihClanova=0;
+     brojPrvihTimova= n%tim, brojPrvihClanova= n/tim + 1;
+     brojPreostalihClanova= n / tim;
+
+    iterator = imena.begin();
+    for(int i=0; i<brojPrvihTimova; i++){
+        for(int j=0; j<brojPrvihClanova; j++){
+            timovi.at(i).insert(*iterator);
+            int slova = 0;
+            string tekst = *iterator;
+            for(int k=0; k<tekst.size(); k++){
+                if(!((tekst.at(k) < 'A' || tekst.at(k) > 'Z') &&
+                    (tekst.at(k) < 'a' || tekst.at(k) > 'z') && 
+                    (tekst.at(k) < '0' || tekst.at(k) > '9')) ){
+                        slova++;
+                    }
+            }
+            iterator = imena.erase(iterator);
+            if(iterator == imena.end()) iterator = imena.begin();
+
+            for(int k=1; k<slova; k++){
+                if(iterator != imena.end()) iterator++;
+                if(iterator == imena.end()) iterator = imena.begin();
+            }
+        }
+    }
+
+    for(int i=brojPrvihTimova; i<tim; i++){
+        for(int j=0; j<brojPreostalihClanova; j++){
+            timovi.at(i).insert(*iterator);
+            int slova = 0;
+            string tekst = *iterator;
+            for(int k=0; k<tekst.size(); k++){
+                if(!((tekst.at(k) < 'A' || tekst.at(k) > 'Z') &&
+                    (tekst.at(k) < 'a' || tekst.at(k) > 'z') && 
+                    (tekst.at(k) < '0' || tekst.at(k) > '9')) ){
+                        slova++;
+                    }
+            }
+            iterator = imena.erase(iterator);
+            if(iterator == imena.end()) iterator = imena.begin();
+
+            for(int k=1; k<slova; k++){
+                if(iterator != imena.end()) iterator++;
+                if(iterator == imena.end()) iterator = imena.begin();
+            }
+        }
+    }
+    return timovi;
+}
+int main ()
+{
+     try{
+         cout<<"Unesite broj djece: ";
+         int n;
+         cin>>n;
+         cout<<"Unesite imena djece: "<<endl;
+         vector<string>imena(n);
+         cin.ignore(10000, '\n');
+         for(string &ime : imena) getline(cin, ime);
+
+         cout<<"Unesite broj timova: ";
+         int broj;
+         cin>>broj;
+         auto timovi = Razvrstavanje(imena, broj);
+
+         for(int i=0; i<broj; i++){
+             cout<<"Tim "<<i+1<<": ";
+             auto kraj = timovi.at(i).end();
+             kraj--;
+
+             for(auto iterator = timovi.at(i).begin(); iterator != timovi.at(i).end(); iterator++){
+                 cout<<*iterator;
+                 if(iterator != kraj) cout<<", ";
+             }
+             cout<<endl;
+         }
+
+     }catch(logic_error e){
+        cout<<"Izuzetak: "<<e.what();
+     }
+	return 0;
+}

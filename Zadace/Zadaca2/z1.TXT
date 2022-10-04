@@ -1,0 +1,259 @@
+#include <iostream>
+#include <cmath>
+#include <vector>
+
+enum class Smjer {Nalijevo, Nadesno};
+enum class Pravci {Sjever, Sjeveroistok, Istok, Jugoistok, Jug, Jugozapad, Zapad, Sjeverozapad};
+enum class KodoviGresaka {PogresnaKomanda, NedostajeParametar, SuvisanParametar, NeispravanParametar};
+enum class Komande {Aktiviraj, Deaktiviraj, Nalijevo, Nadesno, Idi, Kraj};
+
+bool aktivan = true;
+void AktivirajRobota(){aktivan = true;}
+void DeaktivirajRobota(){aktivan = false;}
+void Rotiraj(Pravci &orijentacija, Smjer na_koju_stranu){
+    if(aktivan == false){return;}
+    if(na_koju_stranu == Smjer::Nadesno) orijentacija = Pravci((int(orijentacija) + 1) % 8);
+    else if(na_koju_stranu == Smjer::Nalijevo){
+        if(orijentacija == Pravci::Sjever) orijentacija = Pravci::Sjeverozapad;
+        else orijentacija = Pravci(int(orijentacija)-1);
+    }
+}
+void Idi(int &x, int &y, Pravci orijentacija, int korak){
+    if(aktivan == false){ return;}
+    switch (orijentacija) {
+    case Pravci::Sjever:
+        if(korak < 0){ y -= std::abs(korak); break;}
+         y += korak;
+         break;
+    case Pravci::Sjeveroistok:
+        if(korak < 0){
+             y -= std::abs(korak);
+             x -= std::abs(korak);
+             break;
+             }
+         y += korak;
+         x += korak;
+         break;     
+    case Pravci::Istok:
+    if(korak < 0){ x -= std::abs(korak); break;}
+         x += korak;
+         break;
+    case Pravci::Jugoistok:
+        if(korak < 0){
+            y += std::abs(korak);
+            x -= std::abs(korak);
+            break;
+        }
+         y -= korak;
+         x += korak;
+         break;
+    case Pravci::Jug:
+    if(korak <0 ){ y += std::abs(korak); break;}
+         y -= korak;
+         break;
+    case Pravci::Jugozapad:
+         if(korak <0){
+             y += std::abs(korak);
+             x += std::abs(korak);
+             break;
+         }
+         y -= korak;
+         x -= korak;
+         break;
+    case Pravci::Zapad:
+         if(korak < 0){ x += std::abs(korak); break;}
+         x -= korak;
+         break;
+    case Pravci::Sjeverozapad:
+         if(korak < 0){
+             y -= std::abs(korak);
+             x += std::abs(korak);
+             break;
+         }
+         y += korak;
+         x -= korak;
+         break;                        
+    }
+}
+void IspisiPoziciju(int x, int y, Pravci orijentacija){
+    if(aktivan == false){
+    std::cout<<"Robot je neaktivan, ";
+    }else std::cout<<"Robot je aktivan, ";
+    std::cout<<"nalazi se na poziciji ("<<x<<","<<y<<") i gleda na ";
+
+    switch(orijentacija){
+
+    case   Pravci::Sjever:
+           std::cout<<"sjever.";
+           break;
+    case Pravci::Sjeveroistok:
+           std::cout<<"sjeveroistok.";
+           break;
+    case Pravci::Istok:
+           std::cout<<"istok.";
+           break;
+    case Pravci::Jugoistok:
+           std::cout<<"jugoistok.";              
+           break;
+    case Pravci::Jug:
+           std::cout<<"jug.";
+           break;
+    case Pravci::Jugozapad:
+           std::cout<<"jugozapad.";
+           break;
+    case Pravci::Zapad:
+          std::cout<<"zapad.";
+          break;
+    case Pravci::Sjeverozapad:
+          std::cout<<"sjeverozapad.";  
+          break;                  
+    }
+    std::cout<<std::endl;
+}
+void PrijaviGresku(KodoviGresaka kod_greske){
+    switch(kod_greske){
+    
+    case  KodoviGresaka::PogresnaKomanda:
+          std::cout<<"Nerazumljiva komanda!"<<std::endl;
+          break;
+    case  KodoviGresaka::NedostajeParametar:
+          std::cout<<"Komanda trazi parametar koji nije naveden!"<<std::endl;
+          break;
+    case KodoviGresaka::NeispravanParametar:
+          std::cout<<"Parametar komande nije ispravan!"<<std::endl;
+          break;
+    case KodoviGresaka::SuvisanParametar:
+          std::cout<<"Zadan je suvisan parametar nakon komande!"<<std::endl;
+          break;         
+    }  
+}
+void IzvrsiKomandu(Komande komanda, int parametar, int &x, int &y, Pravci &orijentacija){
+    switch(komanda){
+
+    case  Komande::Aktiviraj:
+          AktivirajRobota();
+          break;
+    case  Komande::Deaktiviraj:
+          DeaktivirajRobota();
+          break;
+    case  Komande::Nalijevo:
+          Rotiraj(orijentacija, Smjer::Nalijevo);
+          break;
+    case  Komande::Nadesno:
+          Rotiraj(orijentacija, Smjer::Nadesno);
+          break; 
+    case  Komande::Idi:
+          Idi(x, y, orijentacija, parametar);
+          break; 
+    case  Komande::Kraj:
+       //   std::cout<<"Dovidjenja!"<<std::endl;
+          return;         
+    }
+}
+bool UnosKomande(Komande &komanda, int &parametar, KodoviGresaka &kod_greske){
+    char c = 'A';
+    char znak;
+    int x=0,y=0;
+    Pravci orijentacija(Pravci::Sjever);
+    
+     // std::cout<<"Unesi komandu: ";
+     std::cin>>c;
+     
+     if(c == 'D'){
+       // if(std::cin.peek() == '\n'){
+        komanda = Komande::Nadesno;
+        IzvrsiKomandu(komanda,parametar,x, y,orijentacija);
+       // IspisiPoziciju(x, y, orijentacija);
+        return true;
+         if(std::cin.peek() != '\n'){
+            kod_greske = KodoviGresaka::SuvisanParametar;
+            PrijaviGresku(kod_greske);
+            return false;
+        }
+
+    }
+     if(c == 'L'){
+        //if(std::cin.peek() == '\n'){
+        komanda = Komande::Nalijevo;
+        IzvrsiKomandu(komanda, parametar, x, y, orijentacija);
+        
+       // IspisiPoziciju(x, y, orijentacija);
+        return true;
+       // } 
+        if(std::cin.peek() != '\n'){
+            kod_greske = KodoviGresaka::SuvisanParametar;
+            PrijaviGresku(kod_greske);
+            return false;
+        }
+    }
+     if(c == 'I'){
+        std::cin>>parametar;
+        if(parametar>0 || parametar <=0){
+        komanda = Komande::Idi;
+        }
+      else if(std::cin.peek() != 0) {
+            kod_greske = KodoviGresaka::NeispravanParametar;
+            PrijaviGresku(kod_greske);
+            return false;
+        }    
+        IzvrsiKomandu(komanda, parametar, x, y, orijentacija);
+      
+       // IspisiPoziciju(x, y, orijentacija);
+        return true;
+
+    }  if(c == 'A'){
+        std::cin>>znak;
+        if(znak == '+'){
+            komanda = Komande::Aktiviraj;
+        }
+        else if(znak == '-'){
+            komanda = Komande::Deaktiviraj;
+        }
+        else if(std::cin.peek() != 0){
+            kod_greske = KodoviGresaka::SuvisanParametar;
+            PrijaviGresku(kod_greske);
+            return false;
+        }
+        IzvrsiKomandu(komanda, parametar, x, y, orijentacija);
+       // IspisiPoziciju(x, y, orijentacija);
+        return true;
+
+    } if(c== 'K'){
+        komanda = Komande::Kraj;
+        IzvrsiKomandu(komanda, parametar,x, y, orijentacija);
+        return true;
+    }
+     if(c != 'K' && c != 'D' && c != 'L' && c != 'A' && c != 'I'){
+       // while(c != 'K' && c!= 'L' && c!= 'D' && c!= 'A' && c!= 'I'){
+        kod_greske = KodoviGresaka::PogresnaKomanda;
+        PrijaviGresku(kod_greske);
+        return false;
+        
+    } 
+    
+       
+    return true;
+}
+int main ()
+{
+    int x,y;
+    Pravci orijentacija(Pravci::Sjever);
+    bool rez;
+    std::cout<<"Robot je aktivan, nalazi se na poziciji (0,0) i gleda na sjever."<<std::endl;
+    int parametar=0;
+    Komande komanda = Komande::Deaktiviraj;
+    KodoviGresaka kod_greske;
+    //
+    while(1){
+        std::cout<<"Unesi komandu: ";
+        UnosKomande(komanda,parametar, kod_greske);
+        IspisiPoziciju(x,  y, orijentacija);
+        std::cin.clear();
+        std::cin.ignore(1000,'\n');
+       if(Komande::Kraj == komanda){
+           std::cout<<"Dovidjenja!";
+       break;
+       }
+    }
+	return 0;
+}

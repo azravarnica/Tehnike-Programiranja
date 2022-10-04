@@ -1,0 +1,298 @@
+#include <iostream>
+#include <cmath>
+#include <ostream>
+#include <stdexcept>
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include <iomanip>
+#include <iterator>
+
+class Berza{
+    int maximalnaCijena;
+    int minimalnaCijena;
+    std::vector<int> Cijene;
+
+    public:
+
+    Berza(int min_cijena, int max_cijena) : minimalnaCijena(min_cijena), maximalnaCijena(max_cijena){
+        if(min_cijena < 0 || max_cijena < 0) throw std::range_error("Ilegalne granicne cijene");
+    }
+
+   /*explicit Berza(int max_cijena) : minimalnaCijena(0), maximalnaCijena(max_cijena){
+        if(max_cijena < 0) throw std::range_error("Ilegalne granicne cijene");
+    }*/
+    explicit Berza(int max_cijena){
+        maximalnaCijena = max_cijena;
+        minimalnaCijena = 0;
+        if(max_cijena < 0) throw std::range_error("Ilegalne granice cijene");
+    }
+
+    void RegistrirajCijenu(int cijena);
+    int DajBrojRegistriranihCijena() const {
+        return Cijene.size();
+    }
+    void BrisiSve(){
+        Cijene.clear();
+    }
+    int DajMinimalnuCijenu() const;
+    int DajMaksimalnuCijenu() const;
+    int DajBrojCijenaVecihOd(int cijena) const;
+    void Ispisi() const;
+    int operator [](int indeks) const;
+    bool operator ! () const {
+        return Cijene.empty();
+    };
+
+    friend Berza &operator ++(Berza &b);
+    friend Berza &operator ++(Berza &b, int);
+    friend Berza &operator --(Berza &b);
+    friend Berza &operator --(Berza &b, int);
+    friend Berza &operator -(Berza &b);
+    friend Berza &operator -(Berza b, int);
+    friend Berza &operator -(int, Berza b);
+    friend Berza &operator -(Berza &b1, Berza &b2);
+    friend Berza &operator +(Berza &b1, Berza &b2);
+    friend Berza &operator +(Berza b, int);
+    friend Berza &operator +(int, Berza b);
+    // Berza operator =(Berza &b);
+    friend Berza &operator +=(Berza &b, int);
+    friend Berza &operator -=(Berza &b, int);
+    friend bool operator != (Berza b1, Berza b2);
+    friend bool operator == (Berza b1, Berza b2);
+};
+
+    void Berza::RegistrirajCijenu(int cijena){
+        if(cijena < minimalnaCijena || cijena > maximalnaCijena) throw std::range_error("Ilegalna cijena");
+        if(cijena > minimalnaCijena || cijena < maximalnaCijena){
+            Cijene.push_back(cijena);
+        }
+    }
+
+    int Berza::DajMinimalnuCijenu() const {
+        if(Cijene.empty()) throw std::range_error("Nema registriranih cijena");
+        return *min_element(Cijene.begin(), Cijene.end());
+    }
+
+    int Berza::DajMaksimalnuCijenu() const {
+        if(Cijene.empty()) throw std::range_error("Nema registriranih cijena");
+        return *max_element(Cijene.begin(), Cijene.end());
+    }
+
+    int Berza::DajBrojCijenaVecihOd(int cijena) const {
+        if(Cijene.empty()) throw std::range_error("Nema registriranih cijena");
+        return std::count_if(Cijene.begin(), Cijene.end(),
+                             std::bind(std::greater<int>(), std::placeholders::_1, cijena));
+    }
+
+    void Berza::Ispisi() const {
+        std::vector<double> pomocni(Cijene.begin(), Cijene.end());
+        std::sort(pomocni.begin(), pomocni.end(), std::greater<int>());
+        std::transform(pomocni.begin(), pomocni.end(), std::ostream_iterator<double>
+                       (std::cout<< std::setprecision(2) << std::fixed, "\n"),
+                       std::bind(std::divides<double>(), std::placeholders::_1, 100));
+    }
+
+    int Berza::operator[](int indeks) const{
+        if(indeks < 1 || indeks > Cijene.size()) throw std::range_error("Neispravan indeks");
+
+        return Cijene[indeks-1];
+    }
+    
+   /* Berza Berza::operator =(Berza &b){
+        std::swap(Cijene,b.Cijene);
+        return *this;
+    }*/
+    Berza &operator ++(Berza &b){
+        std::vector<int> pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(),
+                       std::bind(std::plus<int>(), std::placeholders::_1, 100));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                                   std::bind(std::greater<int>(), std::placeholders::_1, b.maximalnaCijena));
+        if(ukupanBroj > 0) throw std::range_error("Prekoracen dozvoljeni opseg cijena");
+
+        b.Cijene = pomocni;
+        return b;
+    }
+
+    Berza &operator ++(Berza &b, int ){
+        std::vector<int> pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(), 
+                       std::bind(std::plus<int>(), std::placeholders::_1, 100));
+    int ukupanBroj = 0;
+    ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                               std::bind(std::greater<int>(), std::placeholders::_1, b.maximalnaCijena));
+    if(ukupanBroj > 0) throw std::range_error("Prekoracen dozvoljeni opseg cijena");
+
+    b.Cijene = pomocni;
+    return b;
+    }
+
+    Berza &operator --(Berza &b){
+        std::vector<int>pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(), 
+                       std::bind(std::minus<int>() ,std::placeholders::_1, 100));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                                   std::bind(std::greater<int>(), b.minimalnaCijena,std::placeholders::_1));
+        if(ukupanBroj > 0) throw std::range_error("Prekoracen dozvoljeni opseg cijena");
+        b.Cijene = pomocni;
+        return b;
+    }
+
+    Berza &operator --(Berza &b, int){
+        std::vector<int>pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(),
+                       std::bind(std::minus<int>(), std::placeholders::_1, 100));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(),
+                                   std::bind(std::greater<int>(), b.minimalnaCijena,std::placeholders::_1));
+        if(ukupanBroj > 0) throw std::range_error("Prekoracen dozvoljeni opseg cijena");
+        b.Cijene = pomocni;
+        return  b;
+    }
+
+    Berza &operator -(Berza &b){
+        std::transform(b.Cijene.begin(), b.Cijene.end(), b.Cijene.begin(), 
+                       std::bind(std::minus<int>(), b.minimalnaCijena + b.maximalnaCijena, std::placeholders::_1));
+        return b;
+    }
+
+    Berza &operator +(Berza b, int broj){
+        Berza &pom = b;
+        std::vector<int> pomocni(pom.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(),
+                       std::bind(std::plus<int>(), std::placeholders::_1, broj));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                                   std::bind(std::greater<int>(), std::placeholders::_1, pom.maximalnaCijena));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        pom.Cijene = pomocni;
+        return pom;
+    }
+    
+    Berza &operator +=(Berza &b, int broj){
+       // Berza &pom = b;
+        std::vector<int> pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(), 
+                       std::bind(std::plus<int>(), broj, std::placeholders::_1));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), std::bind(std::greater<int>(), std::placeholders::_1, b.maximalnaCijena));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        b.Cijene = pomocni;
+        return b;
+    }
+
+    Berza &operator -(Berza b, int broj){
+        Berza &pom = b;
+        std::vector<int>pomocni(pom.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(), 
+                       std::bind(std::minus<int>(), std::placeholders::_1, broj));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni. end(), 
+                                   std::bind(std::greater<int>(), std::placeholders::_1,*std::min_element(pomocni.begin(), pomocni.end())));
+                                  // ));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        pom.Cijene = pomocni;
+        return pom;
+    }
+
+    Berza &operator -=(Berza &b, int broj){
+        std::vector<int>pomocni(b.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(),
+                       std::bind(std::minus<int>(), std::placeholders::_1, broj));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                                   std::bind(std::greater<int>(), *std::min_element(pomocni.begin(), pomocni.end()),std::placeholders::_1));
+                                  // ));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        b.Cijene = pomocni;
+        return b;
+    }
+
+    Berza &operator +(int broj, Berza b){
+        Berza &pom = b;
+        std::vector<int>pomocni(pom.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(),
+                       std::bind(std::plus<int>(), std::placeholders::_1, broj));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(),
+                                   std::bind(std::greater<int>(), std::placeholders::_1, pom.maximalnaCijena));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        pom.Cijene = pomocni;
+        return pom;
+    }
+
+    Berza &operator -(int broj, Berza b){
+        Berza &pom = b;
+        std::vector<int>pomocni(pom.Cijene);
+        std::transform(pomocni.begin(), pomocni.end(), pomocni.begin(), 
+                       std::bind(std::minus<int>(), broj,std::placeholders::_1));
+        int ukupanBroj = 0;
+        ukupanBroj = std::count_if(pomocni.begin(), pomocni.end(), 
+                                   std::bind(std::greater<int>(), std::placeholders::_1,*std::min_element(pomocni.begin(), pomocni.end())));
+                                  // ));
+        if(ukupanBroj > 0) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+
+        pom.Cijene = pomocni;
+        return pom;
+    }
+
+    Berza &operator +(Berza &b1, Berza &b2){
+        if(b1.Cijene.size() != b2.Cijene.size() || b1.minimalnaCijena != b2.minimalnaCijena || 
+           b1.maximalnaCijena != b2.maximalnaCijena) throw std::domain_error("Nesaglasni operandi");
+        
+        Berza nova(b1.minimalnaCijena, b2.maximalnaCijena);
+        nova.Cijene.resize(b1.Cijene.size());
+
+        std::transform(b1.Cijene.begin(), b1.Cijene.end(), b2.Cijene.begin(), nova.Cijene.begin(), std::plus<int>());
+
+        if(std::find_if(b1.Cijene.begin(), b1.Cijene.end(), std::bind(std::less<int>(), std::placeholders::_1, b1.maximalnaCijena)) 
+            != b1.Cijene.end()) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        
+        b1.Cijene = nova.Cijene;
+        return b1;
+    }
+
+    Berza &operator -(Berza &b1, Berza &b2){
+        if(b1.Cijene.size() != b2.Cijene.size() || b1.minimalnaCijena != b2.minimalnaCijena 
+           || b1.maximalnaCijena != b2.maximalnaCijena) throw std::domain_error("Nesaglasni operandi");
+        
+        Berza nova(b1.minimalnaCijena, b2.maximalnaCijena);
+        nova.Cijene.resize(b1.Cijene.size());
+
+        std::transform(b1.Cijene.begin(), b1.Cijene.end(), b2.Cijene.begin(), nova.Cijene.begin(), std::minus<int>());
+
+        if(std::find_if(nova.Cijene.begin(), nova.Cijene.end(), std::bind(std::less<int>(), std::placeholders::_1, nova.minimalnaCijena))
+           != nova.Cijene.end()) throw std::domain_error("Prekoracen dozvoljeni opseg cijena");
+        
+        b1.Cijene = nova.Cijene;
+        return b1;
+    }
+
+    bool operator ==(Berza b1, Berza b2){
+        return b1.Cijene.size() == b2.Cijene.size() && 
+               std::equal(b1.Cijene.begin(), b1.Cijene.end(), b2.Cijene.begin());
+    }
+
+    bool operator !=(Berza b1, Berza b2){
+        if(!(std::equal(b1.Cijene.begin(), b1.Cijene.end(), b2.Cijene.begin())) ||
+         b1.Cijene.size() != b2.Cijene.size()) return true;
+        return false;
+    }
+int main ()
+{
+	Berza b1(100000);
+    b1.RegistrirajCijenu(30000);
+    b1.RegistrirajCijenu(39900);
+    b1.RegistrirajCijenu(43242);
+    
+    Berza b2 = ++b1;
+    b2.Ispisi();
+    std::cout<<"\n";
+    Berza b3 = b1++;
+    b3.Ispisi(); std::cout<<"\n";
+    b1.Ispisi();
+    return 0;
+}

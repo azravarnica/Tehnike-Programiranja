@@ -1,0 +1,122 @@
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <vector>
+#include <string>
+#include <list>
+#include <set>
+
+using namespace std;
+
+struct Dijete{
+    string ime;
+    Dijete* sljedeci;
+
+};
+
+vector<set<string>> Razvrstavanje(vector<string> imena, int tim){
+    if(tim < 1 || tim > imena.size()) throw logic_error("Razvrstavanje nemoguce");
+
+    Dijete *poc = nullptr, *prosli = nullptr;
+
+    for(int i=0; i<imena.size(); i++){
+        Dijete *novi = new Dijete;
+        novi ->ime = imena[i];
+        novi->sljedeci = nullptr;
+
+        if(!poc) poc = novi;
+        else prosli->sljedeci = novi;
+
+        prosli = novi;
+    }
+    auto kraj = prosli;
+    prosli->sljedeci = poc;
+    vector<set<string>> timovi(tim);
+    int n = imena.size();
+   int brojPrvihTimova= n%tim, brojPrvihClanova= n/tim + 1,brojPreostalihClanova= n / tim;
+   auto pok = poc;
+
+   for(int i=0; i<brojPrvihTimova; i++){
+       for(int j=0; j<brojPrvihClanova; j++){
+           timovi.at(i).insert(pok->ime);
+           int slova=0;
+           string tekst = pok->ime;
+           for(int k=0; k<tekst.size(); k++){
+                if(!((tekst.at(k) < 'A' || tekst.at(k) > 'Z') &&
+                    (tekst.at(k) < 'a' || tekst.at(k) > 'z') && 
+                    (tekst.at(k) < '0' || tekst.at(k) > '9')) ){
+                        slova++;
+                    }
+            }
+
+            auto pom = pok->sljedeci;
+            delete pok;
+            pok = kraj;
+            pok->sljedeci=pom;
+            kraj->sljedeci=pom;
+            for(int k=0; k<slova; k++) pok = pok->sljedeci;
+            for(int k=1; k<slova; k++) kraj = kraj->sljedeci;
+       }
+   }
+
+   for(int i=brojPrvihTimova; i<tim; i++){
+       for(int j=0; j<brojPreostalihClanova; j++){
+           timovi.at(i).insert(pok->ime);
+           int slova=0;
+           string tekst = pok->ime;
+           for(int k=0; k<tekst.size(); k++){
+                if(!((tekst.at(k) < 'A' || tekst.at(k) > 'Z') &&
+                    (tekst.at(k) < 'a' || tekst.at(k) > 'z') && 
+                    (tekst.at(k) < '0' || tekst.at(k) > '9')) ){
+                        slova++;
+                    }
+            }
+
+            auto pom = pok->sljedeci;
+            delete pok;
+
+            if(j != brojPreostalihClanova-1 || i != tim-1){
+                pok=kraj;
+                pok->sljedeci=pom;
+                kraj->sljedeci=pom;
+
+                for(int k=0; k<slova; k++) pok=pok->sljedeci;
+                for(int k=1; k<slova; k++) kraj = kraj->sljedeci;
+
+            }
+       }
+   }
+   return timovi;
+}
+
+int main ()
+{
+    try{
+        cout<<"Unesite broj djece: "<<endl;
+        int n;
+        cin>>n;
+        cout<<"Unesite imena djece: "<<endl;
+        vector<string>imena(n);
+        cin.ignore(10000, '\n');
+        for(string &ime : imena) getline(cin, ime);
+        cout<<"Unesite broj timova: "<<endl;
+        int broj=0;
+        cin>>broj;
+        auto timovi = Razvrstavanje(imena, broj);
+
+        for(int i=0; i<broj; i++){
+            cout<<"Tim "<<i+1<<": ";
+            auto kraj = timovi.at(i).end();
+            kraj--;
+            for(auto iterator = timovi.at(i).begin(); iterator != timovi.at(i).end(); iterator++){
+                cout<<*iterator;
+                if(iterator != kraj) cout<<", ";
+            }
+            cout<<endl;
+        }
+
+    }catch(logic_error e){
+        cout<<"Izuzetak: "<<e.what();
+    }
+	return 0;
+}

@@ -1,0 +1,86 @@
+#include <iostream>
+#include <cmath>
+#include <map>
+#include <set>
+#include <stdexcept>
+
+using namespace std;
+void PretvoriUMala(string &s){
+    for(int i=0; i<s.length(); i++){
+        if(s.at(i) >= 'A' && s.at(i) <= 'Z') s.at(i) += 'z'-'Z';
+    }
+}
+map<string, set<int>> KreirajIndeksPojmova(string s){
+    PretvoriUMala(s);
+    map<string, set<int>> indeks;
+    bool razmak = true;
+    for(int i=0; i<s.length(); i++){
+        if((s.at(i) < 'a' || s.at(i) > 'z') && (s.at(i) < '0' || s.at(i) > '9')){
+            razmak = true;
+        }else if(razmak){
+            razmak = false;
+            int j=i;
+            string pomocni;
+            while(j < s.length() && !((s.at(j) < 'a' || s.at(j) > 'z') && (s.at(j) < '0' || s.at(j) > '9'))){
+             pomocni.push_back(s.at(j));
+                  j++;
+            }
+            auto iterator(indeks.find(pomocni));
+            if(iterator == indeks.end()){
+                indeks.insert(make_pair(pomocni, set<int>{i}));
+            }else{
+                (iterator ->second).insert(i);
+            }
+
+        }
+    }
+    return indeks;
+
+}
+
+set<int> PretraziIndeksPojmova(string rijec, map<string, set<int>> indeks){
+    PretvoriUMala(rijec);
+    auto iterator(indeks.find(rijec));
+    if(iterator == indeks.end()) throw logic_error("Pojam nije nadjen");
+    return iterator->second;
+}
+
+void IspisiIndeksPojmova(map<string, set<int>> indeks){
+    for(auto iterator = indeks.begin(); iterator != indeks.end(); iterator++){
+        cout<<iterator->first<<": ";
+        set<int> skup(iterator->second);
+        int i=0;
+        for(int broj:skup){
+            cout<<broj;
+            if(i<skup.size()-1) cout<<",";
+            i++;
+        }
+        cout<<endl;
+    }
+}
+int main ()
+{
+    
+        cout<<"Unesite tekst: ";
+        string tekst;
+        getline(cin, tekst);
+        auto indeks = KreirajIndeksPojmova(tekst);
+        IspisiIndeksPojmova(indeks);
+
+        for(;;){
+            cout<<"Unesite rijec: ";
+            string rijec;
+            getline(cin, rijec);
+            if(rijec == ".") break;
+        
+    try{  
+        set<int> skup = PretraziIndeksPojmova(rijec, indeks);
+        for(int x: skup) cout<<x<<" ";
+
+          cout<<endl;
+    }catch(logic_error l){
+        cout<<"Unesena rijec nije nadjena!"<<endl;
+    }
+        }
+	return 0;
+}

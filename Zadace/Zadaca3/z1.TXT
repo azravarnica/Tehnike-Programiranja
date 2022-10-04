@@ -1,0 +1,130 @@
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+#include <functional>
+#include <iomanip>
+
+using namespace std;
+std::function<double(double)> BaricentricnaInterpolacija(std::vector<std::pair<double, double>> parovi, int d){
+    if(d < 0 || d >= parovi.size()){
+        throw std::domain_error("Nedozvoljen red");
+    }
+    for(int i=0; i<parovi.size(); i++){
+        for(int j=i+1; j<parovi.size(); j++){
+            if(parovi.at(i).first == parovi.at(j).first ) 
+             throw std::domain_error("Neispravni cvorovi");
+        }
+    }
+    std::vector<double>koef(parovi.size());
+
+    for(int i=0; i<parovi.size(); i++){
+        int p,p1;
+        if(1 > i+1-d){
+            p = 1;
+        }else{
+            p = i + 1 - d;
+        }
+
+        if(i+1 < parovi.size() - d){
+            p1 = i+1;
+        }else{
+            p1 = parovi.size() - d;
+        }
+        koef.at(i) = 0;
+
+        for(int j=p; j<=p1; j++){
+            double rezultat = 1;
+            for(int k=j; k<=j+d; k++){
+                if(i+1 == k){ continue;}
+                rezultat = rezultat * (1. / (parovi.at(i).first - parovi.at(k-1).first));
+
+            }
+            if((j-1)%2 != 0) rezultat *= -1;
+            koef.at(i) = koef.at(i) + rezultat;
+        }
+    }
+    return [parovi, koef](double vrijednost){
+        double suma1 = 0, suma2 = 0,rez;
+
+        for(int i=0; i<parovi.size(); i++){
+            if(parovi.at(i).first == vrijednost ) return parovi.at(i).second;
+
+            suma2 += ((koef.at(i) / (vrijednost - parovi.at(i).first)) * parovi.at(i).second);
+            suma1 += (koef.at(i) / (vrijednost - parovi.at(i).first));
+        }
+        rez = suma2 / suma1;
+
+  return rez;
+    };
+}
+
+template <typename Funkcija>
+
+std::function<double(double)> BaricentricnaInterpolacija(Funkcija f, double min, double max, double dx, int d){
+    if(min > max || dx <= 0){
+        throw std::domain_error("Nekorektni parametri");
+    }
+    std::vector<std::pair<double, double>> parovi;
+    for(double i=min; i<=max; i=i+dx){
+        parovi.push_back(make_pair(i, f(i)));
+    }
+    return BaricentricnaInterpolacija(parovi, d);
+}
+
+int main ()
+{
+    try{
+        std::cout<<"Odaberite opciju (1 - unos cvorova, 2 - aproksimacija): ";
+        int odabir = -1;
+        cin>>odabir;
+        if(odabir == 1){
+            int n;
+            cout<<"Unesite broj cvorova: ";
+            cin>>n;
+            vector<pair<double, double>>parovi(n);
+            cout<<"Unesite cvorove kao parove x y: ";
+            for(int i=0; i<n; i++){
+                cin>>parovi.at(i).first>>parovi.at(i).second;
+            }
+            int d;
+            cout<<"Unesite red interpolacije: ";
+            cin>>d;
+            auto funkcija(BaricentricnaInterpolacija(parovi, d));
+            for(;;){
+                cout<<"Unesite argument (ili \"kraj\" za kraj): ";
+                double argument;
+                cin>>argument;
+                if(!cin) return 0;
+                cout<<"f("<<argument<<") = "<<funkcija(argument)<<endl;
+            }
+
+        }
+        else if(odabir == 2){
+            double min,max,dx;
+            cout<<"Unesite krajeve intervala i korak: ";
+            cin>>min>>max>>dx;
+            cout<<"Unesite red interpolacije: ";
+            int d;
+            cin>>d;
+            auto funkcija([](double x){
+                return x*x + sin(x);
+            });
+            auto funkcija2(BaricentricnaInterpolacija(funkcija, min, max, dx, d));
+            for(;;){
+                cout<<"Unesite argument (ili \"kraj\" za kraj): ";
+                double argument;
+                cin>>argument;
+                if(!cin) return 0;
+            
+            cout<<"f("<<argument<<") = "<<funkcija(argument);
+            cout<<" fapprox("<<argument<<") = "<<funkcija2(argument)<<endl;
+            }
+
+    }
+    }catch(domain_error e){
+        cout<<e.what();
+    }
+	return 0;
+}

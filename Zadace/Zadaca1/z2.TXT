@@ -1,0 +1,193 @@
+#include <ios>
+#include <iostream>
+#include <cmath>
+#include <stdexcept>
+#include <vector>
+#include <array>
+#include <iomanip>
+
+const double e = std::pow(10, -10);
+typedef std::vector<std::vector<double>> Matrica;
+typedef std::array<std::vector<std::vector<double>>,2>Trodimenzionalna;
+
+Matrica MnozenjeMatrica(Matrica m1, Matrica m2){
+    if(m1.size() == 0 && m2.size() == 0) return Matrica();
+    if(m1.size() == 0 || std::fabs(m1.at(0).size() - m2.size()) > e || m2.size() == 0) throw std::domain_error("Matrice nisu saglasne za mnozenje!");
+
+    for(int i=0; i<m1.size(); i++){
+        if(std::fabs(m1.at(i).size() - m1.at(0).size()) > e || std::fabs(m2.at(i).size() - m2.at(0).size()) > e){
+            throw std::domain_error("Neispravna matrica!");
+        }
+    }
+
+    Matrica rezultatMnozenja(m1.size(), std::vector<double>(m2.at(0).size()));
+    double suma = 0;
+    for(int i=0; i<m1.size(); i++){
+        for(int j=0; j<m2.at(0).size(); j++){
+            for(int k=0; k<m2.size(); k++){
+                suma += m1.at(i).at(k)*m2.at(k).at(j);
+            }
+            rezultatMnozenja.at(i).at(j) = suma;
+            suma=0;
+
+        }
+    }
+    return rezultatMnozenja;
+}
+
+/*
+Predugo izvrsavanje za velike formate matrica !!!!
+int Determinanta(Matrica mat, int n){
+    int det=0,l;
+    Matrica m;
+    
+    if(n == 1){
+        det = mat.at(0).at(0);
+    }
+    else if(n == 2){
+        det = mat.at(0).at(0) * mat.at(1).at(1) - mat.at(1).at(0) * mat.at(0).at(1);
+    }
+    else{
+        for(int i=0; i<n; i++){
+            m.resize(n-1);
+            for(int j=0; j<n-1; j++) m.at(j).resize(n-1);
+             for(int j=1; j<n; j++){
+              l=0;
+              for(int k=0; k<n; k++){
+                  if(k == i) continue;
+                  m.at(j-1).at(l) = mat.at(j).at(k);
+                  l++;
+
+              }
+
+             }
+
+           det = det + std::pow(-1.0, 1.0 + i + 1.0) * mat.at(0).at(i) * Determinanta(m, n-1);
+        }
+    }
+    return det;
+    
+}*/
+Trodimenzionalna DoolittleLU(Matrica h){
+    if(h.size() == 0) return Trodimenzionalna();
+    if(std::fabs(h.size() - h.at(0).size()) > e) throw std::domain_error("Matrica mora biti kvadratna!");
+    for(int i=0; i<h.size(); i++){
+        if(std::fabs(h.at(0).size() - h.at(i).size()) > e) throw std::domain_error("Neispravna matrica!");
+    }
+   
+    Trodimenzionalna H;
+    H.at(0).resize(h.size());
+    H.at(1).resize(h.size());
+    for(int i=0; i<h.size(); i++){
+        H.at(0).at(i).resize(h.size());
+        H.at(1).at(i).resize(h.size());
+    }
+
+    for(int i=0; i<h.size(); i++){
+        for(int j=0; j<h.size(); j++){
+            if(i == j){
+                H.at(0).at(i).at(j) = 1;
+            }
+            else if(j > i){
+                H.at(0).at(i).at(j) = 0;
+            }
+            else if(j < i){
+                H.at(1).at(i).at(j) = 0;
+            }
+        }
+    }
+
+    double s1=0,s2=0;
+    for(int i=0; i<h.size(); i++){
+        for(int j=0; j<h.size(); j++){
+            if(j<i){
+                for(int k=0; k<j; k++){
+                    s1 += H.at(0).at(i).at(k) * H.at(1).at(k).at(j);
+                }
+                if(std::fabs(H.at(1).at(j).at(j)) < e) throw std::domain_error("Matrica je singularna!");
+               // if(Determinanta(h, h.size()) == 0) throw std::domain_error("LU faktorizacija ne postoji, jer je matrica singularna!");
+                H.at(0).at(i).at(j) = (1/H.at(1).at(j).at(j)) * (h.at(i).at(j) - s1);
+                s1=0;
+            }
+            if(j>=i){
+                for(int k=0; k<i; k++){
+                    s2 += H.at(0).at(i).at(k) * H.at(1).at(k).at(j);
+                }
+                H.at(1).at(i).at(j) = h.at(i).at(j) - s2;
+                s2 = 0;
+            }
+        }
+    }
+    double s3=0,s4=0;
+    for(int i=0; i<H.at(1).size(); i++){
+        s3 = 0; s4 = 0;
+        for(int j=0; j<H.at(1).size(); j++){
+            s3 += H.at(1).at(i).at(j);
+            s4 += H.at(1).at(j).at(i);
+        }
+        if(std::fabs(s3) < e || std::fabs(s4) < e) throw std::domain_error("LU faktorizacija ne postoji, jer je matrica singularna!");
+    }
+
+return H;
+}
+
+bool ProvjeriFaktorizaciju(Matrica h, Trodimenzionalna H){
+    if(H.size() == 0 && h.size() == 0) return true;
+    if(H.size() != 2) return false;
+    if(h.size() != H.at(1).size()) return false;
+    Matrica p = MnozenjeMatrica(H.at(0), H.at(1));
+    for(int i=0; i<h.size(); i++){
+        for(int j=0; j<p.size(); j++){
+            if(std::fabs(p.at(i).at(j) - h.at(i).at(j)) > e) return false;
+          //  if(h.at(i).at(j) != p.at(i).at(j)) return false;
+        }
+    }
+    return true;
+}
+int main ()
+{   
+    try{
+        int n=0;    
+        std::cout<<"Broj redova/kolona matrice: ";
+        std::cin>>n;
+        Matrica m;
+        m.resize(n, std::vector<double>(n));
+        
+        std::cout<<"Elementi matrice: "<<std::endl;
+        for(int i=0; i<n; i++){
+            for(int j=0; j<n; j++){
+                std::cin>>m.at(i).at(j);
+            }
+        }
+       // std::cout<<"\\\\\\\\\\\\"<<Determinanta(m,n);
+        Trodimenzionalna m1=DoolittleLU(m);
+        std::cout<<"Matrica L: "<<std::endl;
+        for(int i=0; i < n; i++){
+            for(int j=0; j<n; j++){
+                std::cout<<std::left<<std::setw(10)<<std::setprecision(6)<<m1.at(0).at(i).at(j);
+            }
+            std::cout<<std::endl;
+        }
+
+        std::cout<<"Matrica U: "<<std::endl;
+        for(int i=0;  i<n; i++){
+            for(int j=0; j<n; j++){
+                std::cout<<std::left<<std::setw(10)<<std::setprecision(6)<<m1.at(1).at(i).at(j);
+            }
+            std::cout<<std::endl;
+        }
+
+    }catch(std::domain_error e){
+        std::cout<<e.what();
+    }
+    
+    /*Matrica H {{4,3},{6,3}};
+    try{
+        auto matrica = DoolittleLU(H);
+        H.resize(1);
+        std::cout<<std::boolalpha<<ProvjeriFaktorizaciju(H, matrica);
+    } catch(...){
+        std::cout<<"Greska";
+    }*/
+	return 0;
+}
